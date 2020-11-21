@@ -80,7 +80,7 @@ jobs:
 
   check-jupyterhub:
     runs-on: ubuntu-20.04
-    if: github.repository == 'dask/helm-chart'
+    if: github.repository == 'consideratio/helm-chart-2'
 
     steps:
       - uses: actions/checkout@v2
