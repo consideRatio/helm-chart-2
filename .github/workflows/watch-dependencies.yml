@@ -118,13 +118,13 @@ jobs:
         uses: peter-evans/create-pull-request@v3
         with:
           token: "${{ secrets.GITHUB_TOKEN }}"
-          commit-message: Upgrade JupyterHub chart to ${{ steps.remote_chart.outputs.tag }}
-          title: Upgrade JupyterHub chart to ${{ steps.remote_chart.outputs.tag }}
+          commit-message: Upgrade jupyterhub chart to ${{ steps.remote_chart.outputs.tag }}
+          title: Upgrade jupyterhub chart to ${{ steps.remote_chart.outputs.tag }}
           reviewers: consideratio # FIXME: jacobtomlinson
           labels: chart/daskhub
           branch: upgrade-daskhubs-jupyterhub-version
           body: |
-            This PR upgrades the DaskHub chart to depend on JupyterHub version `${{ steps.remote_chart.outputs.tag }}`.
+            This PR upgrades the DaskHub chart to depend on jupyterhub version `${{ steps.remote_chart.outputs.tag }}`.
 
   check-dask-gateway:
     runs-on: ubuntu-20.04
@@ -166,10 +166,10 @@ jobs:
         uses: peter-evans/create-pull-request@v3
         with:
           token: "${{ secrets.GITHUB_TOKEN }}"
-          commit-message: Upgrade Dask-Gateway chart to ${{ steps.remote_chart.outputs.tag }}
-          title: Upgrade Dask-Gateway chart to ${{ steps.remote_chart.outputs.tag }}
+          commit-message: Upgrade dask-gateway chart to ${{ steps.remote_chart.outputs.tag }}
+          title: Upgrade dask-gateway chart to ${{ steps.remote_chart.outputs.tag }}
           reviewers: consideratio # FIXME: jacobtomlinson
           labels: chart/daskhub
           branch: upgrade-daskhubs-dask-gateway-version
           body: |
-            This PR upgrades the DaskHub chart to depend on Dask-Gateway version `${{ steps.remote_chart.outputs.tag }}`.
+            This PR upgrades the DaskHub chart to depend on dask-gateway version `${{ steps.remote_chart.outputs.tag }}`.
