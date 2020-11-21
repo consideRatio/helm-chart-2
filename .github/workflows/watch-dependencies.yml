@@ -88,8 +88,10 @@ jobs:
       # What is the latest version of the JupyterHub Helm chart we may want to
       # bump to? Let's use the JSON blob from our Helm chart repo.
       - name: Get latest stable or pre-release version
+        id: info
         run: |
           echo "NEW_VERSION=$(curl -s https://jupyterhub.github.io/helm-chart/info.json | jq --raw-output .jupyterhub.pre)" >> $GITHUB_ENV
+          echo "::set-output name=new_version::${NEW_VERSION}"
 
       # ref: https://github.com/jacobtomlinson/gha-read-helm-chart
       - name: Read local daskhub Chart.yaml
@@ -104,18 +106,20 @@ jobs:
         with:
           include: "daskhub/Chart.yaml"
           find: "${{ steps.daskhub_chart.outputs.depenencies_jupyterhub_version }}"
-          replace: "$NEW_VERSION"
+          replace: "${{ steps.info.outputs.new_version }}"
 
       # ref: https://github.com/peter-evans/create-pull-request
       - name: Create PR bumping chart dependency version
         uses: peter-evans/create-pull-request@v3
         with:
           token: "${{ secrets.GITHUB_TOKEN }}"
-          commit-message: "Update Dask version to ${{ steps.latest_tag.outputs.tag }}"
-          title: "Update Dask version to ${{ steps.latest_tag.outputs.tag }}"
-          reviewers: "jacobtomlinson,consideratio"
+          commit-message: "Upgrade JupyterHub chart to ${{ steps.info.outputs.new_version }}"
+          title: "Upgrade JupyterHub chart to ${{ steps.info.outputs.new_version }}"
+          reviewers: "consideratio" # errors on my fork to have: jacobtomlinson
+          labels:
+            - chart/daskhub
           branch: "upgrade-daskhubs-jupyterhub-version"
           body: |
-            A new JupyterHub chart version has been detected.
+            A new JupyterHub chart version has been detected!
 
-            This PR updates the DaskHub chart to depend on JupyterHub version `$NEW_VERSION`.
+            This PR upgrades the DaskHub chart to depend on JupyterHub version `${{ steps.info.outputs.new_version }}"`.
