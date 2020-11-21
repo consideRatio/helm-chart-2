@@ -33,7 +33,7 @@ jobs:
       # ref: https://github.com/jacobtomlinson/gha-get-docker-hub-tags
       - name: Get latest tag of daskdev/dask image
         id: latest_tag
-        uses: jacobtomlinson/gha-get-docker-hub-tags@0.1.2
+        uses: jacobtomlinson/gha-get-docker-hub-tags@0.1.3
         with:
           org: daskdev
           repo: dask
@@ -41,24 +41,24 @@ jobs:
       # ref: https://github.com/jacobtomlinson/gha-read-helm-chart
       - name: Read appVersion of dask chart
         id: dask_chart
-        uses: jacobtomlinson/gha-read-helm-chart@0.1.1
+        uses: jacobtomlinson/gha-read-helm-chart@0.1.2
         with:
           path: dask
       - name: Read appVersion of daskhub chart
         id: daskhub_chart
-        uses: jacobtomlinson/gha-read-helm-chart@0.1.1
+        uses: jacobtomlinson/gha-read-helm-chart@0.1.2
         with:
           path: daskhub
 
       # ref: https://github.com/jacobtomlinson/gha-find-replace
       - name: Replace old appVersion with new in dask chart
-        uses: jacobtomlinson/gha-find-replace@0.1.0
+        uses: jacobtomlinson/gha-find-replace@0.1.2
         with:
           include: "dask/"
           find: "${{ steps.dask_chart.outputs.appVersion }}"
           replace: "${{ steps.latest_tag.outputs.tag }}"
       - name: Replace old appVersion with new in daskhub chart
-        uses: jacobtomlinson/gha-find-replace@0.1.0
+        uses: jacobtomlinson/gha-find-replace@0.1.2
         with:
           include: "daskhub/"
           find: "${{ steps.daskhub_chart.outputs.appVersion }}"
@@ -111,6 +111,7 @@ jobs:
       # ref: https://github.com/jacobtomlinson/gha-find-replace
       - name: Git diff changes
         run: |
+          echo "steps.daskhub_chart.outputs.appVersion: ${{ steps.daskhub_chart.outputs.appVersion }}"
           echo "steps.daskhub_chart.outputs.depenencies_jupyterhub_version: ${{ steps.daskhub_chart.outputs.depenencies_jupyterhub_version }}"
           echo "steps.info.outputs.new_version: ${{ steps.info.outputs.new_version }}"
           cat daskhub/Chart.yaml
