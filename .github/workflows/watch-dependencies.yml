@@ -87,14 +87,14 @@ jobs:
 
       # What is the latest version of the JupyterHub Helm chart we may want to
       # bump to? Let's use the JSON blob from our Helm chart repo.
-      - name: Get latest stable or pre-release version
-        id: info
+      - name: Get release info
+        id: jupyterhub_chart
         run: |
-          echo "NEW_VERSION=$(curl -s https://jupyterhub.github.io/helm-chart/info.json | jq --raw-output .jupyterhub.pre)" >> $GITHUB_ENV
+          NEW_VERSION=$(curl -s https://jupyterhub.github.io/helm-chart/info.json | jq --raw-output .jupyterhub.pre)"
           echo "::set-output name=new_version::${NEW_VERSION}"
 
       # ref: https://github.com/jacobtomlinson/gha-read-helm-chart
-      - name: Read local daskhub Chart.yaml
+      - name: Read local chart
         id: daskhub_chart
         uses: jacobtomlinson/gha-read-helm-chart@0.1.2
         with:
@@ -105,15 +105,15 @@ jobs:
         uses: jacobtomlinson/gha-find-replace@0.1.2
         with:
           include: "daskhub/Chart.yaml"
-          find: "${{ steps.daskhub_chart.outputs.depenencies_jupyterhub_version }}"
-          replace: "${{ steps.info.outputs.new_version }}"
+          find: "${{ steps.daskhub_chart.outputs.dependencies_jupyterhub_version }}"
+          replace: "${{ steps.jupyterhub_chart.outputs.new_version }}"
 
       # ref: https://github.com/jacobtomlinson/gha-find-replace
       - name: Git diff changes
         run: |
           echo "steps.daskhub_chart.outputs.appVersion: ${{ steps.daskhub_chart.outputs.appVersion }}"
-          echo "steps.daskhub_chart.outputs.depenencies_jupyterhub_version: ${{ steps.daskhub_chart.outputs.depenencies_jupyterhub_version }}"
-          echo "steps.info.outputs.new_version: ${{ steps.info.outputs.new_version }}"
+          echo "steps.daskhub_chart.outputs.dependencies_jupyterhub_version: ${{ steps.daskhub_chart.outputs.dependencies_jupyterhub_version }}"
+          echo "steps.jupyterhub_chart.outputs.new_version: ${{ steps.jupyterhub_chart.outputs.new_version }}"
           cat daskhub/Chart.yaml
           git status
           git --no-pager diff --color=always
@@ -123,8 +123,8 @@ jobs:
         uses: peter-evans/create-pull-request@v3
         with:
           token: "${{ secrets.GITHUB_TOKEN }}"
-          commit-message: "Upgrade JupyterHub chart to ${{ steps.info.outputs.new_version }}"
-          title: "Upgrade JupyterHub chart to ${{ steps.info.outputs.new_version }}"
+          commit-message: "Upgrade JupyterHub chart to ${{ steps.jupyterhub_chart.outputs.new_version }}"
+          title: "Upgrade JupyterHub chart to ${{ steps.jupyterhub_chart.outputs.new_version }}"
           reviewers: "consideratio" # errors on my fork to have: jacobtomlinson
           labels: |
             chart/daskhub
@@ -132,4 +132,4 @@ jobs:
           body: |
             A new JupyterHub chart version has been detected!
 
-            This PR upgrades the DaskHub chart to depend on JupyterHub version `${{ steps.info.outputs.new_version }}"`.
+            This PR upgrades the DaskHub chart to depend on JupyterHub version `${{ steps.jupyterhub_chart.outputs.new_version }}"`.
