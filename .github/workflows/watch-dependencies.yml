@@ -96,7 +96,7 @@ jobs:
       # ref: https://github.com/jacobtomlinson/gha-read-helm-chart
       - name: Read local chart
         id: daskhub_chart
-        uses: jacobtomlinson/gha-read-helm-chart@0.1.2
+        uses: jacobtomlinson/gha-read-helm-chart@master
         with:
           path: daskhub
 
@@ -132,4 +132,4 @@ jobs:
           body: |
             A new JupyterHub chart version has been detected!
 
-            This PR upgrades the DaskHub chart to depend on JupyterHub version `${{ steps.jupyterhub_chart.outputs.new_version }}"`.
+            This PR upgrades the DaskHub chart to depend on JupyterHub version `${{ steps.jupyterhub_chart.outputs.new_version }}`.
