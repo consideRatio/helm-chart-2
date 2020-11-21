@@ -102,11 +102,20 @@ jobs:
 
       # ref: https://github.com/jacobtomlinson/gha-find-replace
       - name: Replace old appVersion with new in dask chart
-        uses: jacobtomlinson/gha-find-replace@0.1.0
+        uses: jacobtomlinson/gha-find-replace@0.1.2
         with:
           include: "daskhub/Chart.yaml"
           find: "${{ steps.daskhub_chart.outputs.depenencies_jupyterhub_version }}"
           replace: "${{ steps.info.outputs.new_version }}"
+
+      # ref: https://github.com/jacobtomlinson/gha-find-replace
+      - name: Git diff changes
+        run: |
+          echo "steps.daskhub_chart.outputs.depenencies_jupyterhub_version: ${{ steps.daskhub_chart.outputs.depenencies_jupyterhub_version }}"
+          echo "steps.info.outputs.new_version: ${{ steps.info.outputs.new_version }}"
+          cat daskhub/Chart.yaml
+          git status
+          git --no-pager diff --color=yes
 
       # ref: https://github.com/peter-evans/create-pull-request
       - name: Create PR bumping chart dependency version
