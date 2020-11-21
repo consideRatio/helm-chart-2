@@ -1,12 +1,16 @@
 # This is a GitHub workflow defining a set of jobs with a set of steps.
 # ref: https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions
 #
-# This workflow monitors the daskdev/dask image tags and compares them to the
-# version of the Helm chart's appVersion. If they are not in sync, a PR is
-# automatically created to update the Helm charts by replacing the old version
-# with the new.
+# This workflow has a job to monitor the daskdev/dask image tags and compares
+# them to the version of the Helm chart's appVersion. If they are not in sync, a
+# PR is automatically created to update the Helm charts by replacing the old
+# version with the new.
 #
-name: Keep charts updated with daskdev/dask image
+# This workflow has another two jobs to monitor the versions of the JupyterHub
+# Helm chart and Dask-Gateway Helm charts which should trigger a PR to be
+# created bumping daskhub/Chart.yaml's dependency version pinning.
+#
+name: Watch dependencies
 
 on:
   schedule:
@@ -14,8 +18,12 @@ on:
     - cron: "0 * * * *"
   workflow_dispatch:
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
-  check-version:
+  check-dask:
     runs-on: ubuntu-20.04
     if: github.repository == 'dask/helm-chart'
 
@@ -25,7 +33,7 @@ jobs:
       # ref: https://github.com/jacobtomlinson/gha-get-docker-hub-tags
       - name: Get latest tag of daskdev/dask image
         id: latest_tag
-        uses: jacobtomlinson/gha-get-docker-hub-tags@0.1.2
+        uses: jacobtomlinson/gha-get-docker-hub-tags@0.1.3
         with:
           org: daskdev
           repo: dask
@@ -33,24 +41,24 @@ jobs:
       # ref: https://github.com/jacobtomlinson/gha-read-helm-chart
       - name: Read appVersion of dask chart
         id: dask_chart
-        uses: jacobtomlinson/gha-read-helm-chart@0.1.1
+        uses: jacobtomlinson/gha-read-helm-chart@0.1.2
         with:
           path: dask
       - name: Read appVersion of daskhub chart
         id: daskhub_chart
-        uses: jacobtomlinson/gha-read-helm-chart@0.1.1
+        uses: jacobtomlinson/gha-read-helm-chart@0.1.2
         with:
           path: daskhub
 
       # ref: https://github.com/jacobtomlinson/gha-find-replace
       - name: Replace old appVersion with new in dask chart
-        uses: jacobtomlinson/gha-find-replace@0.1.0
+        uses: jacobtomlinson/gha-find-replace@0.1.2
         with:
           include: "dask/"
           find: "${{ steps.dask_chart.outputs.appVersion }}"
           replace: "${{ steps.latest_tag.outputs.tag }}"
       - name: Replace old appVersion with new in daskhub chart
-        uses: jacobtomlinson/gha-find-replace@0.1.0
+        uses: jacobtomlinson/gha-find-replace@0.1.2
         with:
           include: "daskhub/"
           find: "${{ steps.daskhub_chart.outputs.appVersion }}"
@@ -58,7 +66,7 @@ jobs:
 
       # ref: https://github.com/peter-evans/create-pull-request
       - name: Create PR bumping both Helm charts' appVersion
-        uses: peter-evans/create-pull-request@v2
+        uses: peter-evans/create-pull-request@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "Update Dask version to ${{ steps.latest_tag.outputs.tag }}"
@@ -69,3 +77,59 @@ jobs:
             A new Dask Docker image version has been detected.
 
             Updated chart to use `${{ steps.latest_tag.outputs.tag }}`.
+
+  check-jupyterhub:
+    runs-on: ubuntu-20.04
+    if: github.repository == 'consideratio/helm-chart-2'
+
+    steps:
+      - uses: actions/checkout@v2
+
+      # What is the latest version of the JupyterHub Helm chart we may want to
+      # bump to? Let's use the JSON blob from our Helm chart repo.
+      - name: Get release info
+        id: jupyterhub_chart
+        run: |
+          NEW_VERSION=$(curl -s https://jupyterhub.github.io/helm-chart/info.json | jq --raw-output .jupyterhub.pre)
+          echo "::set-output name=new_version::${NEW_VERSION}"
+
+      # ref: https://github.com/jacobtomlinson/gha-read-helm-chart
+      - name: Read local chart
+        id: daskhub_chart
+        uses: jacobtomlinson/gha-read-helm-chart@master
+        with:
+          path: daskhub
+
+      # ref: https://github.com/jacobtomlinson/gha-find-replace
+      - name: Replace old appVersion with new in dask chart
+        uses: jacobtomlinson/gha-find-replace@0.1.2
+        with:
+          include: "daskhub/Chart.yaml"
+          find: "${{ steps.daskhub_chart.outputs.dependencies_jupyterhub_version }}"
+          replace: "${{ steps.jupyterhub_chart.outputs.new_version }}"
+
+      # ref: https://github.com/jacobtomlinson/gha-find-replace
+      - name: Git diff changes
+        run: |
+          echo "steps.daskhub_chart.outputs.appVersion: ${{ steps.daskhub_chart.outputs.appVersion }}"
+          echo "steps.daskhub_chart.outputs.dependencies_jupyterhub_version: ${{ steps.daskhub_chart.outputs.dependencies_jupyterhub_version }}"
+          echo "steps.jupyterhub_chart.outputs.new_version: ${{ steps.jupyterhub_chart.outputs.new_version }}"
+          cat daskhub/Chart.yaml
+          git status
+          git --no-pager diff --color=always
+
+      # ref: https://github.com/peter-evans/create-pull-request
+      - name: Create PR bumping chart dependency version
+        uses: peter-evans/create-pull-request@v3
+        with:
+          token: "${{ secrets.GITHUB_TOKEN }}"
+          commit-message: "Upgrade JupyterHub chart to ${{ steps.jupyterhub_chart.outputs.new_version }}"
+          title: "Upgrade JupyterHub chart to ${{ steps.jupyterhub_chart.outputs.new_version }}"
+          reviewers: "consideratio" # errors on my fork to have: jacobtomlinson
+          labels: |
+            chart/daskhub
+          branch: "upgrade-daskhubs-jupyterhub-version"
+          body: |
+            A new JupyterHub chart version has been detected!
+
+            This PR upgrades the DaskHub chart to depend on JupyterHub version `${{ steps.jupyterhub_chart.outputs.new_version }}`.
