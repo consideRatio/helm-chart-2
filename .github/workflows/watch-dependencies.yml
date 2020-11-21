@@ -116,8 +116,8 @@ jobs:
           commit-message: "Upgrade JupyterHub chart to ${{ steps.info.outputs.new_version }}"
           title: "Upgrade JupyterHub chart to ${{ steps.info.outputs.new_version }}"
           reviewers: "consideratio" # errors on my fork to have: jacobtomlinson
-          labels:
-            - chart/daskhub
+          labels: |
+            chart/daskhub
           branch: "upgrade-daskhubs-jupyterhub-version"
           body: |
             A new JupyterHub chart version has been detected!
