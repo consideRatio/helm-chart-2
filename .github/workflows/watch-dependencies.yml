@@ -45,7 +45,7 @@ jobs:
         with:
           path: dask
       - name: Read appVersion of daskhub chart
-        id: daskhub_chart
+        id: local_chart
         uses: jacobtomlinson/gha-read-helm-chart@0.1.2
         with:
           path: daskhub
@@ -61,7 +61,7 @@ jobs:
         uses: jacobtomlinson/gha-find-replace@0.1.2
         with:
           include: "daskhub/"
-          find: "${{ steps.daskhub_chart.outputs.appVersion }}"
+          find: "${{ steps.local_chart.outputs.appVersion }}"
           replace: "${{ steps.latest_tag.outputs.tag }}"
 
       # ref: https://github.com/peter-evans/create-pull-request
@@ -85,51 +85,91 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      # What is the latest version of the JupyterHub Helm chart we may want to
-      # bump to? Let's use the JSON blob from our Helm chart repo.
-      - name: Get release info
-        id: jupyterhub_chart
-        run: |
-          NEW_VERSION=$(curl -s https://jupyterhub.github.io/helm-chart/info.json | jq --raw-output .jupyterhub.pre)
-          echo "::set-output name=new_version::${NEW_VERSION}"
+      # ref: https://github.com/oprypin/find-latest-tag
+      - name: Find latest tag of dependency
+        id: remote_chart
+        uses: oprypin/find-latest-tag@v1
+        with:
+          repository: jupyterhub/zero-to-jupyterhub-k8s
+          releases-only: false
 
       # ref: https://github.com/jacobtomlinson/gha-read-helm-chart
-      - name: Read local chart
-        id: daskhub_chart
+      - name: Find current tag of dependency
+        id: local_chart
         uses: jacobtomlinson/gha-read-helm-chart@master
         with:
           path: daskhub
 
       # ref: https://github.com/jacobtomlinson/gha-find-replace
-      - name: Replace old appVersion with new in dask chart
+      - name: Replace current with latest in Chart.yaml
         uses: jacobtomlinson/gha-find-replace@0.1.2
         with:
           include: "daskhub/Chart.yaml"
-          find: "${{ steps.daskhub_chart.outputs.dependencies_jupyterhub_version }}"
-          replace: "${{ steps.jupyterhub_chart.outputs.new_version }}"
+          find: "${{ steps.local_chart.outputs.dependencies_jupyterhub_version }}"
+          replace: "${{ steps.remote_chart.outputs.tag }}"
 
       # ref: https://github.com/jacobtomlinson/gha-find-replace
       - name: Git diff changes
         run: |
-          echo "steps.daskhub_chart.outputs.appVersion: ${{ steps.daskhub_chart.outputs.appVersion }}"
-          echo "steps.daskhub_chart.outputs.dependencies_jupyterhub_version: ${{ steps.daskhub_chart.outputs.dependencies_jupyterhub_version }}"
-          echo "steps.jupyterhub_chart.outputs.new_version: ${{ steps.jupyterhub_chart.outputs.new_version }}"
-          cat daskhub/Chart.yaml
-          git status
           git --no-pager diff --color=always
 
       # ref: https://github.com/peter-evans/create-pull-request
-      - name: Create PR bumping chart dependency version
+      - name: Create a PR
         uses: peter-evans/create-pull-request@v3
         with:
           token: "${{ secrets.GITHUB_TOKEN }}"
-          commit-message: "Upgrade JupyterHub chart to ${{ steps.jupyterhub_chart.outputs.new_version }}"
-          title: "Upgrade JupyterHub chart to ${{ steps.jupyterhub_chart.outputs.new_version }}"
-          reviewers: "consideratio" # errors on my fork to have: jacobtomlinson
-          labels: |
-            chart/daskhub
-          branch: "upgrade-daskhubs-jupyterhub-version"
+          commit-message: Upgrade JupyterHub chart to ${{ steps.remote_chart.outputs.tag }}
+          title: Upgrade JupyterHub chart to ${{ steps.remote_chart.outputs.tag }}
+          reviewers: consideratio # FIXME: jacobtomlinson
+          labels: chart/daskhub
+          branch: upgrade-daskhubs-jupyterhub-version
           body: |
-            A new JupyterHub chart version has been detected!
+            This PR upgrades the DaskHub chart to depend on JupyterHub version `${{ steps.remote_chart.outputs.tag }}`.
 
-            This PR upgrades the DaskHub chart to depend on JupyterHub version `${{ steps.jupyterhub_chart.outputs.new_version }}`.
+  check-dask-gateway:
+    runs-on: ubuntu-20.04
+    if: github.repository == 'consideratio/helm-chart-2'
+
+    steps:
+      - uses: actions/checkout@v2
+
+      # ref: https://github.com/oprypin/find-latest-tag
+      - name: Find latest tag of dependency
+        id: remote_chart
+        uses: oprypin/find-latest-tag@v1
+        with:
+          repository: dask/dask-gateway
+          releases-only: false
+
+      # ref: https://github.com/jacobtomlinson/gha-read-helm-chart
+      - name: Find current tag of dependency
+        id: local_chart
+        uses: jacobtomlinson/gha-read-helm-chart@master
+        with:
+          path: daskhub
+
+      # ref: https://github.com/jacobtomlinson/gha-find-replace
+      - name: Replace current with latest in Chart.yaml
+        uses: jacobtomlinson/gha-find-replace@0.1.2
+        with:
+          include: "daskhub/Chart.yaml"
+          find: "${{ steps.local_chart.outputs.dependencies_dask-gateway_version }}"
+          replace: "${{ steps.remote_chart.outputs.tag }}"
+
+      # ref: https://github.com/jacobtomlinson/gha-find-replace
+      - name: Git diff changes
+        run: |
+          git --no-pager diff --color=always
+
+      # ref: https://github.com/peter-evans/create-pull-request
+      - name: Create a PR
+        uses: peter-evans/create-pull-request@v3
+        with:
+          token: "${{ secrets.GITHUB_TOKEN }}"
+          commit-message: Upgrade Dask-Gateway chart to ${{ steps.remote_chart.outputs.tag }}
+          title: Upgrade Dask-Gateway chart to ${{ steps.remote_chart.outputs.tag }}
+          reviewers: consideratio # FIXME: jacobtomlinson
+          labels: chart/daskhub
+          branch: upgrade-daskhubs-dask-gateway-version
+          body: |
+            This PR upgrades the DaskHub chart to depend on Dask-Gateway version `${{ steps.remote_chart.outputs.tag }}`.
