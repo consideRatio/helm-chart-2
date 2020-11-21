@@ -90,7 +90,7 @@ jobs:
       - name: Get release info
         id: jupyterhub_chart
         run: |
-          NEW_VERSION=$(curl -s https://jupyterhub.github.io/helm-chart/info.json | jq --raw-output .jupyterhub.pre)"
+          NEW_VERSION=$(curl -s https://jupyterhub.github.io/helm-chart/info.json | jq --raw-output .jupyterhub.pre)
           echo "::set-output name=new_version::${NEW_VERSION}"
 
       # ref: https://github.com/jacobtomlinson/gha-read-helm-chart
