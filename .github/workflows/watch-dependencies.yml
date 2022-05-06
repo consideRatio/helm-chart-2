@@ -98,7 +98,7 @@ jobs:
           token: ${{ secrets.github_token }}
           commit-message: "Update pangeo/base-notebook version to ${{ steps.latest_tag.outputs.tag }}"
           title: "Update pangeo/base-notebook version to ${{ steps.latest_tag.outputs.tag }}"
-          reviewers: "jacobtomlinson,consideratio"
+          reviewers: "consideratio"
           branch: "upgrade-pangeo-base-notebook-image"
           body: |
             A new pangeo/base-notebook image version has been detected, version `${{ steps.latest_tag.outputs.tag }}`.
@@ -152,12 +152,12 @@ jobs:
         uses: peter-evans/create-pull-request@v4.0.2
         with:
           token: "${{ secrets.github_token }}"
-          commit-message: Upgrade ${{ matrix.chart_dep_name }} chart to ${{ steps.latest.outputs.tag }}
-          title: Upgrade ${{ matrix.chart_dep_name }} chart to ${{ steps.latest.outputs.tag }}
-          reviewers: jacobtomlinson,consideratio
+          commit-message: Upgrade ${{ matrix.chart_dep_name }} chart to ${{ steps.latest.outputs.version }}
+          title: Upgrade ${{ matrix.chart_dep_name }} chart to ${{ steps.latest.outputs.version }}
+          reviewers: consideratio
           labels: chart/daskhub
           branch: upgrade-daskhub-chart-dep-${{ matrix.chart_dep_name }}
           body: |
-            This PR upgrades the DaskHub chart to depend on ${{ matrix.chart_dep_name }} version `${{ steps.latest.outputs.tag }}`.
+            This PR upgrades the DaskHub chart to depend on ${{ matrix.chart_dep_name }} version `${{ steps.latest.outputs.version }}`.
 
             See the [changelog](${{ matrix.chart_dep_changelog_url }}) for more information.
