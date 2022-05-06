@@ -160,4 +160,4 @@ jobs:
           body: |
             This PR upgrades the DaskHub chart to depend on ${{ matrix.chart_dep_name }} version `${{ steps.latest.outputs.tag }}`.
 
-            See the [changelog](${{ chart_dep_changelog_url }}) for more information.
+            See the [changelog](${{ matrix.chart_dep_changelog_url }}) for more information.
