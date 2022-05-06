@@ -105,7 +105,7 @@ jobs:
 
             Updated daskhub chart to use this version by default for jupyterhub's user environment.
 
-  update-daskhub-chart-dependencies:
+  update-chart-dep:
     # if: github.repository == 'dask/helm-chart'
     runs-on: ubuntu-20.04
 
@@ -138,7 +138,7 @@ jobs:
         id: latest
         run: |
           chart_dep_repo=$(cat daskhub/Chart.yaml | yq e '.dependencies.${{ matrix.chart_dep_index }}.repository' -)
-          latest_version=$(helm show chart --repo=${{ matrix.chart_dep_repo }} ${{ matrix.chart_dep_name }} | yq e '.version' -)
+          latest_version=$(helm show chart --repo=$chart_dep_repo ${{ matrix.chart_dep_name }} | yq e '.version' -)
           echo "::set-output name=version::$latest_version"
 
       - name: Update Chart.yaml pinned version
@@ -152,12 +152,12 @@ jobs:
         uses: peter-evans/create-pull-request@v4.0.2
         with:
           token: "${{ secrets.github_token }}"
-          commit-message: Upgrade ${{ matrix.chart_dep_name }} chart to ${{ steps.latest.outputs.version }}
-          title: Upgrade ${{ matrix.chart_dep_name }} chart to ${{ steps.latest.outputs.version }}
+          commit-message: Updates ${{ matrix.chart_dep_name }} chart to ${{ steps.latest.outputs.version }}
+          title: Updates ${{ matrix.chart_dep_name }} chart to ${{ steps.latest.outputs.version }}
           reviewers: consideratio
           labels: chart/daskhub
-          branch: upgrade-daskhub-chart-dep-${{ matrix.chart_dep_name }}
+          branch: update-chart-dep-${{ matrix.chart_dep_name }}
           body: |
-            This PR upgrades the DaskHub chart to depend on ${{ matrix.chart_dep_name }} version `${{ steps.latest.outputs.version }}`.
+            Updates daskhub to depend on ${{ matrix.chart_dep_name }} version `${{ steps.latest.outputs.version }}`.
 
-            See the [changelog](${{ matrix.chart_dep_changelog_url }}) for more information.
+            See [${{ matrix.chart_dep_name }}'s changelog](${{ matrix.chart_dep_changelog_url }}) for more information.
