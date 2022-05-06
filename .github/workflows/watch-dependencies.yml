@@ -2,7 +2,12 @@
 # ref: https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-syntax-for-github-actions
 #
 # - Watch the appVersion field of dask/Chart.yaml and daskhub/Chart.yaml to
-#   match the latest ghcr.io/dask/dask image tag.
+#   match the latest daskdev/dask image tag.
+#
+#   FIXME: Use ghcr.io/dask/dask instead, which requires adjusting the github
+#          action we use to get the latest tag that only supports dockerhub
+#          currently.
+#
 # - Watch the pinned chart dependencies in daskhub/Chart.yaml to match the
 #   latest stable version available.
 #
@@ -22,11 +27,11 @@ jobs:
       - uses: actions/checkout@v3
 
       # ref: https://github.com/jacobtomlinson/gha-get-docker-hub-tags
-      - name: Get latest tag of ghcr.io/dask/dask image
+      - name: Get latest tag of daskdev/dask image
         id: latest_tag
         uses: jacobtomlinson/gha-get-docker-hub-tags@0.1.3
         with:
-          org: ghcr.io/dask
+          org: daskdev
           repo: dask
 
       # ref: https://github.com/jacobtomlinson/gha-read-helm-chart
@@ -55,19 +60,25 @@ jobs:
           find: "${{ steps.daskhub_chart.outputs.appVersion }}"
           replace: "${{ steps.latest_tag.outputs.tag }}"
 
+      - name: git diff
+        run: git --no-pager diff --color=always
+
       # ref: https://github.com/peter-evans/create-pull-request
       - name: Create PR bumping both Helm charts' appVersion
         uses: peter-evans/create-pull-request@v4.0.2
         with:
           token: ${{ secrets.github_token }}
-          commit-message: "Update Dask version to ${{ steps.latest_tag.outputs.tag }}"
-          title: "Update Dask version to ${{ steps.latest_tag.outputs.tag }}"
-          reviewers: "jacobtomlinson"
-          branch: "upgrade-dask-version"
-          body: |
-            A new Dask Docker image version has been detected.
+          branch: update-dask-version
+          reviewers: jacobtomlinson
+          commit-message: Update Dask version to ${{ steps.latest_tag.outputs.tag }}
+          title: Update Dask version to ${{ steps.latest_tag.outputs.tag }}
+          body: >-
+            A new daskdev/dask image version has been detected.
 
-            Updated chart to use `${{ steps.latest_tag.outputs.tag }}`.
+
+            Updated the dask chart to use `${{ steps.latest_tag.outputs.tag }}`,
+            and updated the dask and daskhub chart to declare appVersion `${{
+            steps.latest_tag.outputs.tag }}`.
 
   update-singleuser-image:
     # if: github.repository == 'dask/helm-chart'
@@ -92,19 +103,26 @@ jobs:
       - name: Update daskhub/values.yaml pinned tag
         run: sed --in-place 's/${{ steps.local.outputs.tag }}/${{ steps.latest.outputs.tag }}/g' daskhub/values.yaml
 
+      - name: git diff
+        run: git --no-pager diff --color=always
+
       # ref: https://github.com/peter-evans/create-pull-request
       - name: Create a PR
         uses: peter-evans/create-pull-request@v4.0.2
         with:
           token: ${{ secrets.github_token }}
-          commit-message: "Update pangeo/base-notebook version to ${{ steps.latest.outputs.tag }}"
-          title: "Update pangeo/base-notebook version to ${{ steps.latest.outputs.tag }}"
-          reviewers: "consideratio"
-          branch: "update-singleuser-image"
-          body: |
-            A new pangeo/base-notebook image version has been detected, version `${{ steps.latest.outputs.tag }}`.
+          branch: update-singleuser-image
+          labels: chart/daskhub
+          reviewers: consideratio
+          commit-message: Update daskhub's pangeo/base-notebook version to ${{ steps.latest.outputs.tag }}
+          title: Update daskhub's pangeo/base-notebook version to ${{ steps.latest.outputs.tag }}
+          body: >-
+            A new pangeo/base-notebook image version has been detected, version
+            `${{ steps.latest.outputs.tag }}`.
 
-            Updates daskhub to use this version by default for jupyterhub's user environment.
+
+            Updates daskhub to use this version by default for jupyterhub's user
+            environment.
 
   update-chart-dep:
     # if: github.repository == 'dask/helm-chart'
@@ -153,12 +171,15 @@ jobs:
         uses: peter-evans/create-pull-request@v4.0.2
         with:
           token: "${{ secrets.github_token }}"
+          branch: update-chart-dep-${{ matrix.chart_dep_name }}
+          labels: chart/daskhub
+          reviewers: consideratio
           commit-message: Updates ${{ matrix.chart_dep_name }} chart to ${{ steps.latest.outputs.version }}
           title: Updates ${{ matrix.chart_dep_name }} chart to ${{ steps.latest.outputs.version }}
-          reviewers: consideratio
-          labels: chart/daskhub
-          branch: update-chart-dep-${{ matrix.chart_dep_name }}
-          body: |
-            Updates daskhub to depend on ${{ matrix.chart_dep_name }} version `${{ steps.latest.outputs.version }}`.
+          body: >-
+            Updates daskhub to depend on ${{ matrix.chart_dep_name }} version
+            `${{ steps.latest.outputs.version }}`.
 
-            See [${{ matrix.chart_dep_name }}'s changelog](${{ matrix.chart_dep_changelog_url }}) for more information.
+
+            See [${{ matrix.chart_dep_name }}'s changelog](${{ matrix.chart_dep_changelog_url }})
+            for more information.
