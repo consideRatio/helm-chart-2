@@ -65,7 +65,7 @@ jobs:
 
       # ref: https://github.com/peter-evans/create-pull-request
       - name: Create PR bumping both Helm charts' appVersion
-        uses: peter-evans/create-pull-request@v4.0.2
+        uses: peter-evans/create-pull-request@v4.0.4
         with:
           token: ${{ secrets.github_token }}
           branch: update-dask-version
@@ -108,7 +108,7 @@ jobs:
 
       # ref: https://github.com/peter-evans/create-pull-request
       - name: Create a PR
-        uses: peter-evans/create-pull-request@v4.0.2
+        uses: peter-evans/create-pull-request@v4.0.4
         with:
           token: ${{ secrets.github_token }}
           branch: update-singleuser-image
@@ -168,7 +168,7 @@ jobs:
 
       # ref: https://github.com/peter-evans/create-pull-request
       - name: Create a PR
-        uses: peter-evans/create-pull-request@v4.0.2
+        uses: peter-evans/create-pull-request@v4.0.4
         with:
           token: "${{ secrets.github_token }}"
           branch: update-chart-dep-${{ matrix.chart_dep_name }}
