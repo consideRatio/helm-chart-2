@@ -66,7 +66,7 @@ jobs:
       #
       # ref: https://github.com/jacobtomlinson/gha-find-replace
       - name: Replace old ghcr.io/dask/dask tag with new
-        uses: jacobtomlinson/gha-find-replace@2.0.0
+        uses: jacobtomlinson/gha-find-replace@3.0.1
         with:
           # matches the dask and daskhub folders root files
           include: "dask*/*"
